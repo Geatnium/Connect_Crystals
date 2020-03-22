@@ -74,11 +74,11 @@ public class PlayerController : MonoBehaviour {
         if(Time.timeScale < 0.1f) {
             return;
         }
-        float m = mouse_sense * 0.01f;
+        float m = mouse_sense * 0.05f;
         float mX = Input.GetAxis ("Mouse X") * m
-         + Input.GetAxis ("LeftRight") * m * 800f * Time.deltaTime;
+         + Input.GetAxis ("LeftRight") * m * 400f * Time.deltaTime;
         float mY = Input.GetAxis ("Mouse Y") * m
-         + Input.GetAxis ("UpDown") * m * 800f * Time.deltaTime;
+         + Input.GetAxis ("UpDown") * m * 400f * Time.deltaTime;
         rot = new Vector3 (Mathf.Clamp (rot.x - mY, -80, 80), rot.y + mX, 0f);
         transform.eulerAngles = new Vector3 (0, rot.y, 0);
         cam.localEulerAngles = new Vector3 (rot.x, 0, 0);

@@ -22,6 +22,9 @@ public class LeaderBoard : MonoBehaviour {
     public bool isRanking = false;
 
     private void Start () {
+
+        NCMBAPIKey.Set();
+
         helper = GetComponent<GameHelper> ();
         if (TitleTrigger.mode == 1) {
             thisTime = TitleManager.score_time;
