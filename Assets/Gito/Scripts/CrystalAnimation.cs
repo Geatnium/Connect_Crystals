@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// クリスタルのアニメーション
 public class CrystalAnimation : MonoBehaviour
 {
     // 上下アニメションの周期、回転アニメーションのスピード

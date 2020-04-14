@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
+// スライダーの値をテキストに反映させるクラス
 public class SliderValue : MonoBehaviour
 {
     private Slider slider;

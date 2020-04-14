@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+// マップのクラス
 public class Map : MonoBehaviour
 {
     // プレイヤーの座標

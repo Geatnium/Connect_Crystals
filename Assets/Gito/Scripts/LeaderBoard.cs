@@ -4,6 +4,7 @@ using NCMB;
 using DG.Tweening;
 using System.Collections.Generic;
 
+// ランキングを取得・登録し、表示するクラス
 public class LeaderBoard : Utility
 {
     // 登録したスコアのベストを保存するキー、ローカルのベストスコアを保存するキー

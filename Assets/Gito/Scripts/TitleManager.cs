@@ -7,6 +7,7 @@ public enum TitleState
     None, Cleared, Failed
 }
 
+// タイトル画面での処理などを行うクラス
 public class TitleManager : Utility
 {
     // タイトル画面の状態

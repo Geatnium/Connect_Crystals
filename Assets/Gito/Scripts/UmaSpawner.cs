@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 馬を生成するクラス
 public class UmaSpawner : MonoBehaviour
 {
     // 生成するプレファブ

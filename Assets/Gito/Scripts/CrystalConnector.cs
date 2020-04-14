@@ -14,6 +14,7 @@ public enum CrystalState
     Nothing, Ready, Connecting, Connected
 }
 
+// クリスタルの接続についてのクラス
 public class CrystalConnector : Utility
 {
     // このクリスタルの状態

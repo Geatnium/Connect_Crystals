@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 入力の制限をするために、このクラスを挟んでInputクラスを利用する
 public class MyInput : MonoBehaviour
 {
     // 全ての入力を無効化するかのフラグ

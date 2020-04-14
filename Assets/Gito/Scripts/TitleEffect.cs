@@ -3,6 +3,7 @@ using UnityEngine;
 using TMPro;
 using DG.Tweening;
 
+// タイトルロゴのエフェクト（アニメーション）
 public class TitleEffect : Utility
 {
     // アニメーションに要する時間

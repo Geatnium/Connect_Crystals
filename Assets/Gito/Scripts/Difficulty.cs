@@ -5,6 +5,7 @@ public enum Difficult
     Easy, Hard
 }
 
+// 難易度を管理
 public class Difficulty
 {
     // 難易度

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 馬のアニメーションを管理
 public class UmaAnimation : MonoBehaviour
 {
     private AudioSource audioSource;

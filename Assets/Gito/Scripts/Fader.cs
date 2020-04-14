@@ -10,6 +10,7 @@ public enum FadeColor
     Black, White
 }
 
+// 画面のフェードイン、フェードアウトの処理
 public class Fader : MonoBehaviour
 {
     // この関数を呼び出すとフェードインする

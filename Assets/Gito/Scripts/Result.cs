@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using TMPro;
 
+// 結果の処理をクラス
 public class Result : MonoBehaviour
 {
     // クリアタイム

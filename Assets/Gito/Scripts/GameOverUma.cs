@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using DG.Tweening;
 
+// ゲームオーバー時のエフェクト
 public class GameOverUma : Utility
 {
     // 馬が出現する方向

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 
+// トリガーのイベント
 public class TriggerEvent : Utility
 {
     // やるイベント

@@ -3,6 +3,7 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
 
+// テロップや目的、アクションの表示、操作方法の表示などを行うクラス
 public class Helper : MonoBehaviour
 {
     // テロップ、目的、アクションのトランスフォーム

@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using DG.Tweening;
 
+// ゲームシーンでの進行などを管理
 public class GameManager : Utility
 {
     // ゲームの進行度

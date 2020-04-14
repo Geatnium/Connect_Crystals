@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 
+// 馬の巡回の処理を行うクラス
 public class UmaPatrol : MonoBehaviour
 {
     // 動けるようにするかしないか

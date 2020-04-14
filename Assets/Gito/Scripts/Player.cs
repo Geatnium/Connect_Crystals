@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using DG.Tweening;
 
+// プレイヤーを管理しているクラス
+// ここからコントローラーの制御もする
 public class Player : MonoBehaviour
 {
     private enum PlayerState

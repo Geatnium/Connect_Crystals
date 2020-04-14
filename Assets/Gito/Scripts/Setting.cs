@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.Audio;
 
-
+// 設定を管理しているクラス
 public class Setting : Utility
 {
     // 設定保存のキー
@@ -23,7 +23,7 @@ public class Setting : Utility
 
     [SerializeField] private AudioMixer masterMixer;
 
-
+    // 各設定値をプロパティから保存
     private bool fullScreen
     {
         get { return GetSettingData(KEY_FULLSCREEN, false); }
