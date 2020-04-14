@@ -3,7 +3,20 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Manager
+  - Uma
+  - UmaTrigger
+  - Crystal
+  - Warp
+  - Fader
+  - Ranking
+  - SoundEffect
+  - Helper
+  - GameUI
+  - BGM
+  - Map
+  - EnemyPoints
   layers:
   - Default
   - TransparentFX

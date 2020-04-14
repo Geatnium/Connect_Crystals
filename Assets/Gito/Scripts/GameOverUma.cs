@@ -1,47 +1,40 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using DG.Tweening;
 
-public class GameOverUma : MonoBehaviour {
+public class GameOverUma : Utility
+{
+    // 馬が出現する方向
+    private enum Direction
+    {
+        Up, Down
+    }
+    [SerializeField] private Direction direction;
+    // アニメーション
+    private UmaAnimation anim;
+    // 効果音
+    [SerializeField] private AudioClip sound;
+    // 出現するときのアニメーションの最終座標
+    private Vector3 origPos;
 
-    [SerializeField] private Transform root;
-
-    private AudioSource se;
-
-    [SerializeField] private AudioClip[] over;
-
-    private int r;
-
-    private float anim_speed;
-
-    private void OnEnable () {
-        se = GetComponent<AudioSource> ();
-        r = Random.Range (0, 2);
-        anim_speed = 3.0f + Random.value * 2f;
-
-        Invoke ("RandomLate", Random.value);
+    private void OnEnable()
+    {
+        // アニメーションを再生
+        anim = GetComponent<UmaAnimation>();
+        anim.MoveAnim(true);
+        // 座標を保存 ここに向けてアニメーション
+        origPos = transform.localPosition;
+        Vector3 p = origPos;
+        // 上方向にアニメーションの時はy座標を3に、下方向は-3に
+        p.y = direction == Direction.Up ? 3f : -3f;
+        transform.localPosition = p;
+        // 0〜1までのランダムな時間遅らせる
+        Invoke("RandomLate", Random.value);
     }
 
-    private void RandomLate () {
-        se.PlayOneShot (over[Random.Range (0, over.Length)]);
-        if (transform.localPosition.y > 0) {
-            transform.DOLocalMoveY (0, 0.28f);
-        } else {
-            transform.DOLocalMoveY (-0.24f, 0.28f);
-        }
-    }
-
-    private void Update () {
-        float rr;
-        if(r == 0) {
-            rr = 1;
-        } else {
-            rr = -1;
-        }
-        float sin1 = rr * Mathf.Sin (2f * Mathf.PI * anim_speed * Time.time);
-        float sin2 = rr * Mathf.Sin (2f * Mathf.PI * anim_speed * Time.time / 2);
-
-        root.localPosition = new Vector3 (sin2 * 0.3f, sin1 * 0.15f, 0);
+    private void RandomLate()
+    {
+        // 効果音を鳴らしてアニメーションで表示
+        soundEffecter.Play(sound, SoundEffectPitch.x1);
+        transform.DOLocalMove(origPos, 0.8f);
     }
 }

@@ -1,96 +1,71 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using DG.Tweening;
+﻿using UnityEngine;
 
-public class PlayerController : MonoBehaviour {
-
+// 移動と視点移動を行うクラス
+public class PlayerController : MonoBehaviour
+{
+    // スピード　マウス感度　首のトランスフォーム　コントローラー　回転の変数
     [SerializeField] private float speed;
-    public float mouse_sense;
-
-    [SerializeField] private Transform cam;
-
+    private float mouseSensi = 50f;
+    private Transform neck;
     private CharacterController controller;
-
     private Vector3 rot;
 
-    [SerializeField] private GameHelper helper;
-    [SerializeField] private GameManager manager;
+    // マウス感度を変更
+    public void SetMouseSensi(float sensi)
+    {
+        mouseSensi = sensi;
+    }
 
-    private AudioSource audio;
-    [SerializeField] private AudioClip footStep;
-
-    private void Start () {
-        controller = GetComponent<CharacterController> ();
-        audio = GetComponent<AudioSource> ();
-
+    private void Start()
+    {
+        controller = GetComponent<CharacterController>();
+        neck = transform.GetChild(0);
         rot = transform.eulerAngles;
     }
 
-    private void Update () {
-        Pause ();
-
-        if (!helper.moveAble) {
-            rot.y = transform.eulerAngles.y;
-            rot.x = cam.localEulerAngles.x;
-            if(rot.x > 180f) {
-                rot.x = -(360f - rot.x);
-            }
-            return;
+    // 動かせない時
+    public void Stopping()
+    {
+        // コントローラーを無効にする
+        if (controller.enabled)
+        {
+            controller.SimpleMove(Vector3.zero);
         }
-
-        Move ();
-        MouseLook ();
+        rot.y = transform.eulerAngles.y;
+        rot.x = neck.localEulerAngles.x;
+        if (rot.x > 180f)
+        {
+            rot.x = -(360f - rot.x);
+        }
     }
 
-    float foot = 0;
-    bool b = false;
-    private void Move () {
-        float h = Input.GetAxis ("Horizontal");
-        float v = Input.GetAxis ("Vertical");
-        float s = speed * (1 + Input.GetAxis ("Dash"));
-        Vector3 dir = Vector3.Normalize (transform.forward * v + transform.right * h);
-        controller.SimpleMove (dir * s);
-
-        float headSinX = Mathf.Cos (s * Mathf.PI * 1.75f * Time.time) * 0.25f * dir.magnitude;
-        float headSinY = Mathf.Sin (s * Mathf.PI * 1.75f * Time.time) * 0.4f * dir.magnitude;
-        if(headSinY < 0) {
-            headSinY *= -1;
+    public void PUpdate()
+    {
+        // コントローラーが無効だったら有効にする
+        if (!controller.enabled)
+        {
+            controller.enabled = true;
         }
+        // WASDの入力
+        float h = MyInput.GetAxis("Horizontal");
+        float v = MyInput.GetAxis("Vertical");
+        // Shiftの入力でスピードを変更
+        float s = speed * (1 + MyInput.GetAxis("Dash"));
+        // 移動方向の計算　単位ベクトル化
+        Vector3 dir = Vector3.Normalize(transform.forward * v + transform.right * h);
+        // コントローラーで移動
+        controller.SimpleMove(dir * s);
 
-        cam.localPosition = new Vector3 (headSinX, 1 + headSinY, 0);
-
-        if (headSinY <=  0.1f && !b) {
-            b = true;
-            audio.volume = dir.magnitude * s * 0.1f;
-            audio.PlayOneShot (footStep);
-        } else if (headSinY >= 0.2f) {
-            b = false;
-        }
-
-    }
-    
-    private void MouseLook () {
-        if(Time.timeScale < 0.1f) {
-            return;
-        }
-        float m = mouse_sense * 0.05f;
-        float mX = Input.GetAxis ("Mouse X") * m
-         + Input.GetAxis ("LeftRight") * m * 400f * Time.deltaTime;
-        float mY = Input.GetAxis ("Mouse Y") * m
-         + Input.GetAxis ("UpDown") * m * 400f * Time.deltaTime;
-        rot = new Vector3 (Mathf.Clamp (rot.x - mY, -80, 80), rot.y + mX, 0f);
-        transform.eulerAngles = new Vector3 (0, rot.y, 0);
-        cam.localEulerAngles = new Vector3 (rot.x, 0, 0);
-   }
-
-    public void LookUma (Vector3 pos) {
-        cam.DOLookAt (pos, 0.2f);
-    }
-
-    private void Pause () {
-        if (Input.GetButtonDown ("Pause")) {
-            helper.DoPause ();
-        }
+        // マウス感度の調整
+        float m = mouseSensi * 0.05f;
+        // マイスの移動量か矢印キーの入力を取得
+        float mX = MyInput.GetAxis("Mouse X") * m
+         + MyInput.GetAxis("LeftRight") * m * 400f * Time.deltaTime;
+        float mY = MyInput.GetAxis("Mouse Y") * m
+         + MyInput.GetAxis("UpDown") * m * 400f * Time.deltaTime;
+        // 体や首を回転
+        rot = new Vector3(Mathf.Clamp(rot.x - mY, -80, 80), rot.y + mX, 0f);
+        transform.eulerAngles = new Vector3(0, rot.y, 0);
+        neck.localEulerAngles = new Vector3(rot.x, 0, 0);
     }
 }

@@ -1,176 +1,258 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using NCMB;
 using DG.Tweening;
+using System.Collections.Generic;
 
-public class LeaderBoard : MonoBehaviour {
+public class LeaderBoard : Utility
+{
+    // 登録したスコアのベストを保存するキー、ローカルのベストスコアを保存するキー
+    private readonly string KEY_UPLOADTIME = "uploadtime", KEY_BESTTIME = "besttime";
+    // ベストタイム
+    private float bestTime = -1f;
 
-    private const string CODE_BESTTIME = "weioriojjieko";
+    // ベストタイムを表示するテキスト
+    [SerializeField] private Text yourBestTime;
+    // ランカーのプレハブ
+    [SerializeField] private GameObject ranker_prefab;
+    // ランカーを表示するボード
+    [SerializeField] private Transform rankerBoard;
 
-    [SerializeField] private Text your_text;
-    [SerializeField] private GameObject Ranker, RankerParent;
+    // アップロードに使用する入力フォーム
+    [SerializeField] private RectTransform rankingUploader_UI;
+    // 名前を入力するところ
+    [SerializeField] private InputField nameField;
 
-    private float thisTime, bestTime;
+    // ランキングの画面が開かれているかどうか
+    private bool isOpen = false;
 
-    private GameHelper helper;
-
-    [SerializeField] private Transform rankingUI;
-    [SerializeField] private InputField name_field;
-
-    public bool isRanking = false;
-
-    private void Start () {
-
+    private void Start()
+    {
+        // NCMBのキーを設定
         NCMBAPIKey.Set();
 
-        helper = GetComponent<GameHelper> ();
-        if (TitleTrigger.mode == 1) {
-            thisTime = TitleManager.score_time;
+        // ランキングを更新
+        GetRanking();
+    }
+
+     // ベストタイムが更新されている場合は更新
+    public void UpdateBestTime()
+    {
+        // ベストタイムを読み出す
+        bestTime = PlayerPrefs.GetFloat(KEY_BESTTIME, -1f);
+        // 今回やったのがハードモードでクリアしていたら、タイムを取得
+        float currentTime = -1f;
+        if (Difficulty.difficult == Difficult.Hard && TitleManager.state == TitleState.Cleared)
+        {
+            currentTime = Result.currentClearedTime;
         }
-        bestTime = PlayerPrefs.GetFloat (CODE_BESTTIME, -1f);
-
-        GetRanking ();
-
-        if (thisTime > 0) {
-            if (bestTime > 0) {
-                if (thisTime < bestTime) {
-                    bestTime = thisTime;
+        // 今回の結果があり、且つベストタイムもすでにあり、且つ今回の結果の方が早い時、ベストタイムを更新。
+        // 今回の結果があり、ベストタイムがまだ無い場合は、ベストタイムを更新
+        if (currentTime > 0f)
+        {
+            if (bestTime > 0f)
+            {
+                if (currentTime < bestTime)
+                {
+                    bestTime = currentTime;
                 }
-            } else {
-                bestTime = thisTime;
             }
-            PlayerPrefs.SetFloat (CODE_BESTTIME, bestTime);
-        } else {
-            if (bestTime < 0) {
-                your_text.text = "あなたの記録 : ----- sec";
+            else
+            {
+                bestTime = currentTime;
+            }
+            PlayerPrefs.SetFloat(KEY_BESTTIME, bestTime);
+        }
+        // 今回の結果もなく、ベストタイムもまだ無い場合は、-----を表示
+        else
+        {
+            if (bestTime < 0)
+            {
+                yourBestTime.text = "あなたの記録 : ----- sec";
                 return;
             }
         }
-        your_text.text = string.Format ("あなたの記録 : {0:F2} sec", bestTime);
+        // ベストタイムがあれば、それを表示
+        yourBestTime.text = string.Format("あなたの記録 : {0:F2} sec", bestTime);
     }
 
-    private void Update () {
-        if (Input.GetKey (KeyCode.RightShift) && Input.GetKey (KeyCode.D) && Input.GetKey (KeyCode.L) && Input.GetKey (KeyCode.Y)) {
-            //Debug.Log ("aaa");
-            PlayerPrefs.DeleteAll ();
-            bestTime = -1f;
-            your_text.text = "あなたの記録 : ----- sec";
+    // ランキングを取得
+    private void GetRanking()
+    {
+        // すでにある場合、一旦全部削除
+        for (int r = 0; r < rankerBoard.transform.childCount; r++)
+        {
+            Destroy(rankerBoard.transform.GetChild(r).gameObject);
         }
-
-        if (isRanking) {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
-    }
-
-    public void ReloadRanking () {
-        CloseRankingMenu ();
-        GetRanking ();
-    }
-
-    public void UploadRunking () {
-        if(bestTime < 0) {
-            CloseRankingMenu ();
-            helper.TelopDisplay ("まだハードモードをクリアしていません。(';')");
-        } else {
-            if (string.IsNullOrEmpty (name_field.text)) {
-                helper.TelopDisplay ("名前を入力してください。(';')");
-            } else {
-                UploadScore ();
-                CloseRankingMenu ();
-            }
-        }
-    }
-
-    public void OpenRankingMenu () {
-        isRanking = true;
-        rankingUI.DOScale (Vector3.one, 0.2f);
-        helper.moveAble = false;
-    }
-
-    public void CloseRankingMenu () {
-        isRanking = false;
-        rankingUI.DOScale (Vector3.zero, 0.2f);
-        Invoke ("LateMoveTrue", 0.2f);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-    }
-
-    private void LateMoveTrue () {
-        helper.moveAble = true;
-    }
-
-
-    private void GetRanking () {
-        for (int r = 0 ; r < RankerParent.transform.childCount ; r++) {
-            Destroy (RankerParent.transform.GetChild (r).gameObject);
-        }
-        // データストアの「HighScore」クラスから検索
-        NCMBQuery<NCMBObject> query = new NCMBQuery<NCMBObject> ("Ranking");
-        query.OrderByAscending ("Time");
+        // 検索
+        NCMBQuery<NCMBObject> query = new NCMBQuery<NCMBObject>("Ranking");
+        query.OrderByAscending("Time");
         query.Limit = 10;
-        query.FindAsync ((List<NCMBObject> objList, NCMBException e) => {
-            if (e != null) {
-                //検索失敗時の処理
-                helper.TelopDisplay ("ランキング更新にエラーが発生しました。m(_ _)m");
-            } else {
-                //検索成功時の処理
-                //取得したレコードをHighScoreクラスとして保存
-                int c = 0;
-                foreach (NCMBObject obj in objList) {
-                    float s = (float)System.Convert.ToDouble (obj["Time"]);
-                    string n = System.Convert.ToString (obj["Name"]);
-                    GameObject go_ranker = Instantiate (Ranker, RankerParent.transform);
-                    go_ranker.GetComponent<RankerItem> ().SetRanker (c + 1, n, s);
+        query.FindAsync((List<NCMBObject> objList, NCMBException e) =>
+        {
+            if (e != null)
+            {
+                //検索失敗時
+                helper.Telop("ランキング更新にエラーが発生しました。m(_ _)m");
+            }
+            else
+            {
+                //検索成功時
+                // ランカーを表示していく
+                int c = 1;
+                foreach (NCMBObject obj in objList)
+                {
+                    float s = (float)System.Convert.ToDouble(obj["Time"]);
+                    string n = System.Convert.ToString(obj["Name"]);
+                    GameObject go_ranker = Instantiate(ranker_prefab, rankerBoard.transform);
+                    go_ranker.GetComponent<Ranker>().SetRanker(c, n, s);
                     c++;
                 }
             }
         });
     }
 
-    public void UploadScore () {
-        string upName = name_field.text;
-        // データストアの「HighScore」クラスから、Nameをキーにして検索
-        NCMBQuery<NCMBObject> query = new NCMBQuery<NCMBObject> ("Ranking");
-        query.WhereEqualTo ("Name", upName);
-        query.FindAsync ((List<NCMBObject> objList, NCMBException e) => {
+    // ランキングにアップロードを試みる
+    public void UploadRunking()
+    {
+        // ベストタイムが無い場合、アップロードできない
+        if (bestTime < 0)
+        {
+            helper.Telop("まだハードモードをクリアしていません。(';')");
+        }
+        // ベストタイムがある場合
+        else
+        {
+            // すでにアップロードされているタイムを取得
+            float uploadedTime = PlayerPrefs.GetFloat(KEY_UPLOADTIME, -1f);
+            // 名前を入力していないとダメ
+            if (string.IsNullOrEmpty(nameField.text))
+            {
+                helper.Telop("名前を入力してください。(';')");
+                return;
+            }
+            // アップロードされたタイムがある場合、それを更新していないとダメ
+            if (uploadedTime > 0f && uploadedTime <= bestTime)
+            {
+                helper.Telop("タイムを更新してください。(';')");
+                return;
+            }
+            // アップロードされたタイムが無いか、されててもタイムを更新していればアップロード
+            UploadScore();
+        }
+        // 閉じる
+        CloseRankingMenu();
+    }
+
+    // タイムをアップロードする
+    private void UploadScore()
+    {
+        // 入力された名前を取得
+        string upName = nameField.text;
+        // 検索
+        NCMBQuery<NCMBObject> query = new NCMBQuery<NCMBObject>("Ranking");
+        query.WhereEqualTo("Name", upName);
+        query.FindAsync((List<NCMBObject> objList, NCMBException e) =>
+        {
             //検索成功したら
-            if (e == null) {
-                //未登録
-                if (objList.Count == 0) {
-                    NCMBObject obj = new NCMBObject ("Ranking");
+            if (e == null)
+            {
+                //未登録の場合、新規登録
+                if (objList.Count == 0)
+                {
+                    NCMBObject obj = new NCMBObject("Ranking");
                     obj["Name"] = upName;
                     obj["Time"] = bestTime;
-                    obj.SaveAsync ((NCMBException ee) => {
-                        if (ee == null) {
-                            helper.TelopDisplay ("ランキングにタイムを登録しました。＼(^o^)／");
-                            GetRanking ();
-                        } else {
-                            helper.TelopDisplay ("ランキング更新にエラーが発生しました。m(_ _)m");
+                    obj.SaveAsync((NCMBException ee) =>
+                    {
+                        if (ee == null)
+                        {
+                            helper.Telop("ランキングにタイムを登録しました。＼(^o^)／");
+                            PlayerPrefs.SetFloat(KEY_UPLOADTIME, bestTime);
+                            GetRanking();
+                        }
+                        else
+                        {
+                            helper.Telop("ランキング更新にエラーが発生しました。m(_ _)m");
                         }
                     });
-                } else {
-                    float cloudScore = (float)System.Convert.ToDouble (objList[0]["Time"]);
-                    if (bestTime < cloudScore) {
+                }
+                // すでに登録されてる場合
+                else
+                {
+                    // サーバーのタイムを参照
+                    float cloudScore = (float)System.Convert.ToDouble(objList[0]["Time"]);
+                    // サーバーのタイムより早いとアップロードできる
+                    if (bestTime < cloudScore)
+                    {
                         objList[0]["Time"] = bestTime;
-                        objList[0].SaveAsync ((NCMBException ee) => {
-                            if (ee == null) {
-                                helper.TelopDisplay ("ランキングのタイムを更新しました。＼(^o^)／");
-                                GetRanking ();
-                            } else {
-                                helper.TelopDisplay ("ランキング更新にエラーが発生しました。m(_ _)m");
+                        objList[0].SaveAsync((NCMBException ee) =>
+                        {
+                            if (ee == null)
+                            {
+                                helper.Telop("ランキングのタイムを更新しました。＼(^o^)／");
+                                PlayerPrefs.SetFloat(KEY_UPLOADTIME, bestTime);
+                                GetRanking();
+                            }
+                            else
+                            {
+                                helper.Telop("ランキング更新にエラーが発生しました。m(_ _)m");
                             }
                         });
-                    } else {
-                        GetRanking ();
-                        helper.TelopDisplay ("サーバーにあるタイムの方が良いです。d(^_^o)");
+                    }
+                    // サーバーの方がタイムが早い
+                    else
+                    {
+                        GetRanking();
+                        helper.Telop("サーバーにあるタイムの方が良いです。d(^_^o)");
                     }
                 }
-            } else {
-                helper.TelopDisplay ("ランキング更新にエラーが発生しました。m(_ _)m");
+            }
+            else
+            {
+                helper.Telop("ランキング更新にエラーが発生しました。m(_ _)m");
             }
         });
+    }
+
+    // ランキング登録のフォームを表示する
+    public void OpenRankingMenu()
+    {
+        // 開かれていない時だけ実行できる
+        if (!isOpen)
+        {
+            isOpen = true;
+            // にゅっとアニメーションして開く
+            rankingUploader_UI.DOScale(Vector3.one, 0.2f);
+            // プレイヤーは動けなくし、カーソルを表示
+            player.MoveStop();
+            CursorVisible();
+        }
+    }
+
+    // フォームを閉じる
+    public void CloseRankingMenu()
+    {
+        // にゅっと閉じる
+        rankingUploader_UI.DOScale(Vector3.zero, 0.2f);
+        // カーソルを非表示に
+        CursorIsVisible();
+        // 閉じ終わった後に
+        Delay(0.2f, () =>
+        {
+            // プレイヤーを動けるように
+            player.MoveActive();
+            // またランキングを開けるように
+            isOpen = false;
+        });
+    }
+
+    // ランキングを更新
+    public void ReloadRanking()
+    {
+        // ランキングを閉じる
+        CloseRankingMenu();
+        // ランキングを更新する
+        GetRanking();
     }
 }

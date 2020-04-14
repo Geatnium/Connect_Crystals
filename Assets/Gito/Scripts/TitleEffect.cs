@@ -1,33 +1,35 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using DG.Tweening;
 
-public class TitleEffect : MonoBehaviour {
-
-    private Material mat;
-    
+public class TitleEffect : Utility
+{
+    // アニメーションに要する時間
+    [SerializeField] private float dulation = 3f;
+    // 効果音
     [SerializeField] private AudioClip opening;
-    private AudioSource se;
 
-    private void Start () {
-        mat = GetComponent<TextMeshProUGUI> ().fontMaterial;
-        se = GetComponent<AudioSource> ();
-        StartCoroutine (TitleAnim ());
+    // タイトルのアニメーションを開始　表示に要する時間を返す
+    public float StartTitleAnim()
+    {
+        StartCoroutine(TitleAnim());
+        return dulation + 1.5f;
     }
 
-    private void Update () {
-
-    }
-
-    private IEnumerator TitleAnim () {
-        yield return new WaitForSeconds (1.0f);
-        mat.DOFloat (0, "_FaceDilate", 3f);
-        se.PlayOneShot (opening);
-        yield return new WaitForSeconds (1.5f);
-        while (true) {
-            mat.SetFloat ("_GlowOuter", 0.25f * Mathf.Sin (2f * Mathf.PI * 0.25f * Time.time) + 0.75f);
+    private IEnumerator TitleAnim()
+    {
+        // TextMeshProのマテリアルを取得
+        Material mat = GetComponent<TextMeshProUGUI>().fontMaterial;
+        // タイトルを表示
+        mat.DOFloat(0, "_FaceDilate", dulation);
+        // 効果音を鳴らす
+        soundEffecter.Play(opening, SoundEffectPitch.x1);
+        yield return new WaitForSeconds(dulation + 1.5f);
+        // 明暗を繰り返す
+        while (true)
+        {
+            mat.SetFloat("_GlowOuter", 0.25f * Mathf.Sin(2f * Mathf.PI * 0.25f * Time.time) + 0.75f);
             yield return null;
         }
     }

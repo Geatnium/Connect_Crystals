@@ -1,168 +1,232 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
-using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour {
+public class GameManager : Utility
+{
+    // ゲームの進行度
+    private enum Progress
+    {
+        Tutorial, MainGame, Ending, Clear, Failure
+    }
+    private Progress progress = Progress.Tutorial;
 
-    [SerializeField] private GameObject Uma, Map, Guard, How, TimeCount, GameOverUma, Warp1, Warp2, Warp3, EndUmaTrigger;
+    // スポナー
+    private UmaSpawner spawner;
+    // ゲームのUI, マップ, 移動制限、ワープ1, 2, 3, 最後の馬のトリガー、ゲームオーバー時のエフェクト
+    [SerializeField] private GameObject gameUI, map, guards, warp1, warp2, warp3, endUmaTriggers, gameOverEffect;
+    // ゲームオーバー時の効果音
+    [SerializeField] private AudioClip gameOverSound;
+    // 接続したクリスタルの数
+    private int connectedNum = 0;
+    // タイムカウントをしている親オブジェクト
+    [SerializeField] private RectTransform timeCountTransform;
+    // タイムカウントをしているテキスト
+    [SerializeField] private Text timeCountText;
+    // タイムをカウントする変数
+    private float timeCount = 0f;
 
-    [SerializeField] private Transform player;
-
-    [SerializeField] private Uma[] umas;
-
-    [SerializeField] private AudioSource bgm;
-
-    private GameHelper helper;
-
-    public int crystals = 0;
-
-    public bool isPlaying = false, isCatched = false, isWarping = false, isEnding1 = false, isClear = false;
-
-    private float time = 0;
-
-    private Text time_text;
-
-    private void Start () {
-        TitleManager.score_time = -1;
-
-        helper = GetComponent<GameHelper> ();
-
-        time_text = TimeCount.GetComponentInChildren<Text> ();
-
-        Map.SetActive (false);
-        Invoke ("StartTelop", 2.5f);
-
-        helper.WhiteFadeIn ();
+    private void Start()
+    {
+        // スポナーを取得
+        spawner = GetComponent<UmaSpawner>();
+        // カーソルを非表示
+        CursorIsVisible();
+        // フェードインする
+        fader.FadeIn(FadeColor.White, 1.0f, () =>
+        {
+            // フェードインが終わったら動けるようになる
+            player.MoveActive();
+            // 操作方法を表示
+            helper.HowDisplay();
+            // テロップと目的を表示
+            helper.Telop("道なりに進んでください。\n先にある魔法陣で転移します。");
+            helper.Purpose("道なりに進み、魔法陣に向かう");
+        });
     }
 
-    private void StartTelop () {
-        helper.TelopDisplay ("道なりに進んでください。\n先にある魔法陣で転移します。");
-        helper.PurposeDisplay ("道なりに進み、魔法陣に向かう");
-    }
-
-    private void Update () {
-        if (isPlaying) {
-            time += Time.deltaTime;
-            time_text.text = string.Format ("Time : {0:F2} sec", time);
+    // クリスタルを接続したときの処理
+    public void ConnectCrystal(CrystalColor crystalColor)
+    {
+        connectedNum++;
+        // 馬を生成する
+        spawner.Spawn();
+        // 青クリスタルを接続したらゲーム開始
+        if(crystalColor == CrystalColor.Blue)
+        {
+            // ゲーム開始
+            GameStart();
+        }
+        else
+        {
+            // クリスタルをカウントする
+            CountCrystal();
         }
     }
 
-    [SerializeField] private Vector3 warpPos1, warpRot1, warpPos2, warpRot2;
-
-    public void Worp_1 () {
-        StartCoroutine (WarpCor_1 ());
+    // ゲーム開始
+    private void GameStart()
+    {
+        // ゲームの進行を進める
+        progress = Progress.MainGame;
+        // BGMを再生
+        bgm.Play();
+        // マップを表示
+        map.SetActive(true);
+        // ステージを移動できるようにする
+        guards.SetActive(false);
+        // テロップと目的を表示
+        helper.Telop("ゲームスタート！\n敵から逃げながら、全てのクリスタルを接続してください。");
+        helper.Purpose("全てのクリスタルを接続する (1/7)");
+        // 経過時間を表示
+        timeCountTransform.DOMoveX(0f, 0.5f);
     }
 
-    private IEnumerator WarpCor_1 () {
-        helper.WhiteFadeOut ();
-        yield return new WaitForSeconds (2f);
-        Destroy (Warp1);
-        warpPos1.y = 0.16f;
-        player.position = warpPos1;
-        player.rotation = Quaternion.Euler (warpRot1);
-        helper.WhiteFadeIn ();
-        yield return new WaitForSeconds (2f);
-        helper.TelopDisplay ("青いクリスタルに近づいてEキーで接続してください。\nそうしたらゲームスタートです！");
-        helper.PurposeDisplay ("青いクリスタルを接続");
-    }
-
-    public void UmaSpawn () {
-        GameObject go_uma = Instantiate (Uma);
-        go_uma.name = "SpawnedUma";
-        crystals++;
-        if (crystals == 1) {
-            bgm.Play ();
-            helper.PurposeDisplay ("全てのクリスタルを接続する(1/7)");
-            helper.TelopDisplay ("ゲームスタート！\n敵から逃げながら、全てのクリスタルを接続してください。");
-            TimeCount.GetComponent<RectTransform> ().DOLocalMoveX (-515f, 0.5f);
-            isPlaying = true;
-            Map.SetActive (true);
-            Destroy (Guard);
-        } else {
-            helper.PurposeChange ("全てのクリスタルを接続する(" + crystals + "/7)");
-            if (crystals == 7) {
-                Warp2.SetActive (true);
-                helper.PurposeDisplay ("スタート地点に戻る");
-                helper.TelopDisplay ("全てのクリスタルが繋がった！\nスタート地点に魔法陣が出現しました。");
-            }
+    // 接続したクリスタルをカウント
+    private void CountCrystal()
+    {
+        // まだ全ては接続していない場合
+        if(connectedNum < 7)
+        {
+            // 目的にも表示
+            helper.Purpose("全てのクリスタルを接続する (" + connectedNum + "/7)");
+        }
+        else // 全てのクリスタルを接続した場合
+        {
+            // テロップと目的
+            helper.Telop ("全てのクリスタルが繋がった！\nスタート地点に脱出用の魔法陣が出現しました。");
+            helper.Purpose("スタート地点に戻る");
+            // ワープ2を有効化
+            warp2.SetActive(true);
         }
     }
 
-    public void Worp_2 () {
-        StartCoroutine (WarpCor_2 ());
+    // 一つ目のワープ
+    public void Warp1()
+    {
+        // 動けなくする
+        player.MoveStop();
+        // フェードアウト
+        fader.FadeOut(FadeColor.White, 1.0f, Warp1Func);
     }
 
-    private IEnumerator WarpCor_2 () {
-        isPlaying = false;
-        isWarping = true;
-        helper.WhiteFadeOut ();
-        yield return new WaitForSeconds (2f);
-        warpPos2.y = 0.16f;
-        player.position = warpPos2;
-        player.rotation = Quaternion.Euler (warpRot2);
-        helper.WhiteFadeIn ();
-        while (true) {
-            GameObject destroyUma = GameObject.Find ("SpawnedUma");
-            if(destroyUma != null) {
-                Destroy (destroyUma);
-                yield return null;
-            } else {
-                break;
-            }
+    private void Warp1Func()
+    {
+        // 見えないときに、プレイヤーをワープ なぜかたまにワープしない時があるので
+        for (int i = 0; i < 10; i++)
+        {
+            player.transform.position = new Vector3(0f, 0f, 0f);
+            player.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
         }
-        Destroy (Warp2);
-        Warp3.SetActive (true);
-        EndUmaTrigger.SetActive (true);
-        Map.SetActive (false);
-        yield return new WaitForSeconds (2f);
-        isPlaying = true;
-        isWarping = false;
-        isEnding1 = true;
-        helper.TelopDisplay ("この道を抜けた先にゴールの魔法陣があります。\n止まるんじゃねぇぞ...！");
-        helper.PurposeDisplay ("ゴールまで走り抜ける");
+        // 一つ目のワープを消す
+        warp1.SetActive(false);
+        // フェードイン
+        fader.FadeIn(FadeColor.White, 1.0f, () =>
+        {
+            // フェードインが終わったら動けるよになる
+            player.MoveActive();
+            // テロップと目的を表示
+            helper.Telop("青いクリスタルに近づいてEキーで接続してください。\nそうしたらゲームスタートです！");
+            helper.Purpose("青いクリスタルを接続");
+        });
     }
 
-    public void Catched () {
-        isPlaying = false;
-        isCatched = true;
-        helper.Catched ();
-        TimeCount.SetActive (false);
-        Map.SetActive (false);
-        How.SetActive (false);
-        StartCoroutine (GameOverCor ());
+    // 二つ目のワープ
+    public void Warp2()
+    {
+        // 動けなくする
+        player.MoveStop();
+        // 進行をエンディングに
+        progress = Progress.Ending;
+        // フェードアウト
+        fader.FadeOut(FadeColor.White, 1.0f, Warp2Func);
     }
 
-    private IEnumerator GameOverCor () {
-        yield return new WaitForSeconds (0.5f);
-        GameOverUma.SetActive (true);
-        yield return new WaitForSeconds (2f);
-        helper.BlackFadeOut ();
-        yield return new WaitForSeconds (2.1f);
-        TitleManager.state = 2;
-        SceneManager.LoadScene ("TitleScene");
+    private void Warp2Func()
+    {
+        // 見えないときに、プレイヤーをワープ なぜかたまにワープしない時があるので
+        for (int i = 0; i < 10; i++)
+        {
+            player.transform.position = new Vector3(-1.5f, 0f, -20.5f);
+            player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        }
+        // 二つ目のワープを消す
+        warp2.SetActive(false);
+        // タイムとマップはもう表示しない
+        timeCountTransform.gameObject.SetActive(false);
+        map.SetActive(false);
+        // フェードイン
+        fader.FadeIn(FadeColor.White, 1.0f, () =>
+        {
+            // フェードインが終わったら動けるよになる
+            player.MoveActive();
+            // 三つ目のワープを有効化
+            warp3.SetActive(true);
+            // 馬が動き出すトリガーを有効化
+            endUmaTriggers.SetActive(true);
+            // テロップと目的を表示
+            helper.Telop("この道を抜けた先にゴールの魔法陣があります。\n止まるんじゃねぇぞ...！");
+            helper.Purpose("ゴールまで走り抜ける");
+        });
     }
 
-    public void Warp_3 () {
-        isClear = true;
-        StartCoroutine (ClearWarp ());
+    // 三つ目のワープ　ゲームクリア！
+    public void Warp3()
+    {
+        // 動けなくする
+        player.MoveStop();
+        // 振り向く
+        player.transform.DORotate(new Vector3(0, 180f, 0), 0.4f);
+        player.transform.GetChild(0).DOLocalRotate(Vector3.zero, 0.4f);
+        // 進行をクリアに
+        progress = Progress.Clear;
+        // タイトル画面の状態をクリア状態に
+        TitleManager.state = TitleState.Cleared;
+        // タイトルのリザルトにクリアタイムを送る
+        Result.currentClearedTime = timeCount;
+        // タイトルに遷移
+        SceneChangeFadeOut(FadeColor.White, Scene.Title, 2.0f);
     }
 
-    private IEnumerator ClearWarp () {
-        helper.WhiteFadeOut ();
-        player.DORotate (new Vector3 (0, 180f, 0), 0.5f);
-        yield return new WaitForSeconds (2.1f);
-        TitleManager.state = 1;
-        TitleManager.score_time = time;
-        SceneManager.LoadScene ("TitleScene");
+
+    // ゲームオーバー時の処理
+    public void GameOver()
+    {
+        // 入力を受け付けなくする
+        MyInput.invalidAnyKey = true;
+        // 全ての馬を止める
+        GameObject[] umas = GameObject.FindGameObjectsWithTag("Uma");
+        // 全てのUIを非表示にする
+        helper.gameObject.SetActive(false);
+        gameUI.gameObject.SetActive(false);
+        for (int i = 0; i < umas.Length; i++)
+        {
+            umas[i].GetComponent<UmaPatrol>().StopMove();
+        }
+        // 少し遅らせてエフェクトを実行
+        Delay(0.5f, () =>
+        {
+            // ゲームオーバーのエフェクトを表示
+            gameOverEffect.SetActive(true);
+            // 効果音を鳴らす
+            soundEffecter.Play(gameOverSound, SoundEffectPitch.x1);
+        });
+
+        TitleManager.state = TitleState.Failed;
+        // 2.5秒後にフェードアウトしてシーン遷移
+        Delay(3.0f, () =>
+        {
+            SceneChangeFadeOut(FadeColor.Black, Scene.Title, 1.5f);
+        });
     }
 
-    public void PauseGoTitle () {
-        Time.timeScale = 1f;
-        TitleManager.state = 0;
-        SceneManager.LoadScene ("TitleScene");
+    private void Update()
+    {
+        // メインのゲーム中だけタイムをカウントする
+        if(progress == Progress.MainGame)
+        {
+            timeCount += Time.deltaTime;
+            timeCountText.text = string.Format("Time : {0:F2} sec", timeCount);
+        }
     }
-
 }

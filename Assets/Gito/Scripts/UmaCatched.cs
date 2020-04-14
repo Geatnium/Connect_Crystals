@@ -4,23 +4,23 @@ using UnityEngine;
 
 public class UmaCatched : MonoBehaviour {
 
-    [SerializeField] private GameManager manager;
-    private PlayerController playerController;
+    //[SerializeField] private GameManager manager;
+    //private PlayerController playerController;
 
-    private void Start () {
-        playerController = GetComponent<PlayerController> ();
-    }
+    //private void Start () {
+    //    playerController = GetComponent<PlayerController> ();
+    //}
 
-    private void Update () {
+    //private void Update () {
 
-    }
+    //}
 
-    public void OnTriggerEnter (Collider other) {
-        if (other.CompareTag ("Uma")) {
-            if (!manager.isClear) {
-                manager.Catched ();
-                playerController.LookUma (other.gameObject.transform.position);
-            }
-        }
-    }
+    //public void OnTriggerEnter (Collider other) {
+    //    if (other.CompareTag ("Uma")) {
+    //        //if (!manager.isClear) {
+    //            //manager.Catched ();
+    //            //playerController.LookUma (other.gameObject.transform.position);
+    //        }
+    //    }
+    //}
 }

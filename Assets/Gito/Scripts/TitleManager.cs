@@ -1,64 +1,72 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using TMPro;
+﻿using UnityEngine;
 
-public class TitleManager : MonoBehaviour {
+// タイトル画面の状態
+public enum TitleState
+{
+    // 特になし、クリア後、失敗後
+    None, Cleared, Failed
+}
 
-    private GameHelper helper;
+public class TitleManager : Utility
+{
+    // タイトル画面の状態
+    public static TitleState state = TitleState.None;
 
-    [SerializeField] private GameObject Clear, GameOver, How, ParticleEffect;
-    [SerializeField] private TextMeshProUGUI score_text;
+    // タイトルエフェクト
+    [SerializeField] private TitleEffect titleEffect;
 
-    //0-特になし, 1-クリア, 2-ゲームオーバー
-    public static int state = 0;
+    private void Start()
+    {
+        // 念のためタイムスケールを1に
+        Time.timeScale = 1f;
+        // カーソルを非表示に
+        CursorIsVisible();
+        // フェードイン
+        fader.FadeIn(FadeColor.Black, 1.0f, () =>
+        {
+            MyInput.invalidAnyKey = true;
+            // フェードイン終了後、タイトルのアニメーションを再生し、終了したら動けるようになる
+            Delay(titleEffect.StartTitleAnim(), () =>
+            {
+                MyInput.invalidAnyKey = false;
+                player.MoveActive();
+                helper.HowDisplay();
+            });
+        });
 
-    public static float score_time = -1;
-    
-    [SerializeField] private AudioSource warpAudio;
-
-    private void Start () {
-        helper = GetComponent<GameHelper> ();
-        helper.BlackFadeIn ();
-        helper.moveAble = false;
-
-        if(state == 1) {
-            Clear.SetActive (true);
-            score_text.text = string.Format ("Time : {0:F2} sec", score_time);
-        }else if(state == 2) {
-            GameOver.SetActive (true);
+        // ゲームに成功して戻ってきた時
+        if (state == TitleState.Cleared)
+        {
+            GetComponent<Result>().ClearedEvent();
         }
-    }
-
-    float t = 0;
-    bool b = false;
-    private void Update () {
-        ParticleEffect.SetActive(GameHelper.particle);
-
-        if (b) {
-            return;
+        // ゲームに失敗して戻ってきた時
+        else if (state == TitleState.Failed)
+        {
+            GetComponent<Result>().FailedEvent();
         }
-        t += Time.deltaTime;
-        if (t < 6f) {
-            helper.moveAble = false;
-            return;
-        }
-        b = true;
-        helper.moveAble = true;
-        How.SetActive (true);
+
+        GameObject.FindWithTag("Ranking").GetComponent<LeaderBoard>().UpdateBestTime();
+        // 最後に状態を戻す
+        state = TitleState.None;
     }
 
-    public void GoGameStage () {
-        StartCoroutine (FadeChange ());
+    // ステージの難易度を設定してゲームシーンに移行
+    public void StartEasyStage()
+    {
+        Difficulty.difficult = Difficult.Easy;
+        GoGameScene();
     }
 
-    private IEnumerator FadeChange () {
-        warpAudio.Play ();
-        helper.WhiteFadeOut ();
-        yield return new WaitForSeconds (2f);
-        SceneManager.LoadScene ("GameScene");
+    public void StartHardStage()
+    {
+        Difficulty.difficult = Difficult.Hard;
+        GoGameScene();
     }
 
+    // ゲームシーンに移行する関数
+    private void GoGameScene()
+    {
+        SceneChangeFadeOut(FadeColor.White, Scene.Game, 1.0f);
+        player.MoveStop();
+    }
 }
