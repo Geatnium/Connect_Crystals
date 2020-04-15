@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+// 一時停止の管理をしているクラス
 public class Pause : Utility
 {
     // 一時停止中か

@@ -22,18 +22,23 @@ public class TitleManager : Utility
         Time.timeScale = 1f;
         // カーソルを非表示に
         CursorIsVisible();
-        // フェードイン
-        fader.FadeIn(FadeColor.Black, 1.0f, () =>
+        // クリア後の場合は白のフェードインで、それ以外だったら黒のフェードイン
+        if (state == TitleState.Cleared)
         {
-            MyInput.invalidAnyKey = true;
-            // フェードイン終了後、タイトルのアニメーションを再生し、終了したら動けるようになる
-            Delay(titleEffect.StartTitleAnim(), () =>
+            // フェードイン
+            fader.FadeIn(FadeColor.White, 1.0f, () =>
             {
-                MyInput.invalidAnyKey = false;
-                player.MoveActive();
-                helper.HowDisplay();
+                FadeInAfterStart();
             });
-        });
+        }
+        else
+        {
+            // フェードイン
+            fader.FadeIn(FadeColor.Black, 1.0f, () =>
+            {
+                FadeInAfterStart();
+            });
+        }
 
         // ゲームに成功して戻ってきた時
         if (state == TitleState.Cleared)
@@ -49,6 +54,20 @@ public class TitleManager : Utility
         GameObject.FindWithTag("Ranking").GetComponent<LeaderBoard>().UpdateBestTime();
         // 最後に状態を戻す
         state = TitleState.None;
+    }
+
+    // フェードイン終了後にやる処理
+    private void FadeInAfterStart()
+    {
+        // 入力を受け付けない
+        MyInput.invalidAnyKey = true;
+        // フェードイン終了後、タイトルのアニメーションを再生し、終了したら動けるようになる
+        Delay(titleEffect.StartTitleAnim(), () =>
+        {
+            MyInput.invalidAnyKey = false;
+            player.MoveActive();
+            helper.HowDisplay();
+        });
     }
 
     // ステージの難易度を設定してゲームシーンに移行
