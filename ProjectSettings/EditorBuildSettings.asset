@@ -6,12 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Gito/Scenes/FirstScene.unity
+    path: Assets/Mines/Scenes/FirstScene.unity
     guid: cd9fb914c4a214462820a19e1f4fa52f
   - enabled: 1
-    path: Assets/Gito/Scenes/TitleScene.unity
+    path: Assets/Mines/Scenes/TitleScene.unity
     guid: 4dfc78537de6642149d5b581f48b561f
   - enabled: 1
-    path: Assets/Gito/Scenes/GameScene.unity
+    path: Assets/Mines/Scenes/GameScene.unity
     guid: 0c7f72878ab93441a94cd59055dd1ce3
   m_configObjects: {}
